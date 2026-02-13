@@ -34,12 +34,13 @@ SWEEP_CONFIG = {
     "metric": {"name": "best_val_top1", "goal": "maximize"},
     "parameters": {
         "rank_selection_method": {"values": ["energy_threshold"]},
-        "energy_threshold": {"values": [0.90, 0.92, 0.95, 0.98]},
+        "energy_threshold": {"values": [0.85, 0.88, 0.92, 0.95, 0.98]},
         # Alternative: sweep fixed_rank_ratio instead
         # "rank_selection_method": {"values": ["fixed_ratio"]},
         # "fixed_rank_ratio": {"values": [0.15, 0.2, 0.25, 0.3]},
     },
 }
+
 
 
 def parse_args():
@@ -60,11 +61,15 @@ def parse_args():
 def make_run_function(config_path: str, extra_overrides: dict):
     """Return a function that runs one sweep trial with wandb.config merged into config."""
     def run_fn():
-        # wandb.agent() has already called wandb.init() with sweep sample
-        overrides = dict(wandb.config)
-        overrides["use_wandb"] = True
-        overrides.update(extra_overrides)
-        run_distillation(config_path, overrides=overrides)
+        # Explicitly initialize a run so wandb.config is available across wandb versions.
+        run = wandb.init()
+        try:
+            overrides = dict(run.config)
+            overrides["use_wandb"] = True
+            overrides.update(extra_overrides)
+            run_distillation(config_path, overrides=overrides)
+        finally:
+            wandb.finish()
     return run_fn
 
 

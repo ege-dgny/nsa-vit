@@ -141,13 +141,16 @@ def run_distillation(config_path: str, overrides: dict = None):
             logger.warning("use_wandb is True but wandb not installed; skipping wandb logging.")
 
     # Set up logging
+    log_dir = config.get('log_dir', './runs')
+    os.makedirs(log_dir, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s: %(message)s",
+        force=True,
         handlers=[
             logging.StreamHandler(),
             logging.FileHandler(
-                os.path.join(config.get('log_dir', './runs'), 'train.log'),
+                os.path.join(log_dir, 'train.log'),
                 mode='w'),
         ]
     )

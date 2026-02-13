@@ -1,0 +1,9 @@
+torch>=2.0
+torchvision>=0.15
+timm>=0.9.0
+pyyaml
+tensorboard
+wandb
+fvcore
+tqdm
+matplotlib

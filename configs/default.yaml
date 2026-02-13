@@ -1,0 +1,59 @@
+# NSA-ViT Default Configuration
+# Null-Space Absorbing ViT Compression
+
+# Model
+teacher_model: "vit_small_patch16_224"
+teacher_checkpoint: null  # path to fine-tuned teacher; null = use timm pretrained
+image_size: 224
+patch_size: 16
+num_classes: 100  # CIFAR-100
+
+# Compression
+rank_selection_method: "energy_threshold"  # "energy_threshold" or "fixed_ratio"
+energy_threshold: 0.95          # retain 95% spectral energy per layer
+fixed_rank_ratio: 0.25          # alternative: keep 25% of min(m,n)
+per_head_svd: true              # SVD per attention head, not fused
+compress_patch_embed: false     # keep patch embedding full-rank
+compress_head: false            # keep classifier head full-rank
+trainable_pos_embed: true       # fine-tune positional embeddings
+
+# Loss weights
+alpha: 0.1            # null-space loss weight
+gamma: 0.05           # attention-map distillation weight
+eta: 0.05             # value-output matching weight (L_val)
+beta: 0.1             # output KD weight
+lambda_orth: 0.1      # orthonormality regularizer weight
+mu: 0.1               # global CLS matching weight (L_global)
+kd_temperature: 4.0
+kd_metric: "wasserstein"  # "kl" or "wasserstein"
+attn_loss_metric: "kl"   # "kl" (math-aligned) or "mse"
+
+# Training
+dataset: "cifar100"         # "cifar100" or "imagenet"
+data_root: "./data"
+batch_size: 128
+epochs: 50
+lr: 1.0e-4
+weight_decay: 0.05
+optimizer: "adamw"
+scheduler: "cosine"
+warmup_epochs: 5
+gradient_clip: 1.0
+num_workers: 4
+seed: 42
+device: "auto"  # "auto", "cuda", "mps", or "cpu"
+
+# Memory optimization
+attn_loss_every_n: 3  # compute attention distillation every N blocks
+
+# Logging & checkpoints
+log_dir: "./runs"
+checkpoint_dir: "./checkpoints"
+save_every: 10
+eval_every: 1
+
+# Weights & Biases (set use_wandb: false to disable)
+use_wandb: true
+wandb_project: "nsa-vit"
+wandb_entity: null   # optional: team or user name
+wandb_run_name: null # optional: custom run name; null = auto

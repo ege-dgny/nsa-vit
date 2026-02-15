@@ -1,0 +1,64 @@
+# NSA-ViT Configuration — ViT-Small Teacher
+# ViT-S: embed_dim=384, depth=12, heads=6 (~22M params)
+
+# Model
+teacher_model: "vit_small_patch16_224"
+teacher_checkpoint: null  # Fine-tune first: python -m nsa_vit.train_teacher --model vit_small_patch16_224 --epochs 30 --checkpoint_dir ./checkpoints/vit_small
+image_size: 224
+patch_size: 16
+num_classes: 100  # CIFAR-100
+
+# Compression
+rank_selection_method: "fixed_ratio"
+energy_threshold: 0.95
+fixed_rank_ratio: 0.25
+per_head_svd: true
+compress_patch_embed: false
+compress_head: false
+trainable_pos_embed: true
+
+# Loss weights
+alpha: 0.5
+gamma: 0.1
+eta: 0.1
+beta: 1.0
+lambda_orth: 0.01
+mu: 0.01
+kd_temperature: 4.0
+kd_metric: "kl"
+attn_loss_metric: "kl"
+
+# Training
+dataset: "cifar100"
+data_root: "./data"
+batch_size: 128
+epochs: 100
+lr: 1e-4
+weight_decay: 0.05
+optimizer: "adamw"
+scheduler: "cosine"
+warmup_epochs: 3
+gradient_clip: 1.0
+num_workers: 4
+seed: 42
+device: "auto"
+
+# Data augmentation
+mixup_alpha: 0.8
+cutmix_alpha: 1.0
+label_smoothing: 0.1
+
+# Memory optimization
+attn_loss_every_n: 3
+
+# Logging & checkpoints
+log_dir: "./runs/vit_small"
+checkpoint_dir: "./checkpoints/vit_small"
+save_every: 10
+eval_every: 1
+
+# Weights & Biases
+use_wandb: true
+wandb_project: "nsa-vit"
+wandb_entity: null
+wandb_run_name: null

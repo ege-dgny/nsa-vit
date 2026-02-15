@@ -34,6 +34,7 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=None)
     parser.add_argument('--device', type=str, default=None)
     parser.add_argument('--energy_threshold', type=float, default=None)
+    parser.add_argument('--fixed_rank_ratio', type=float, default=None)
     parser.add_argument('--rank_selection_method', type=str, default=None)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--alpha', type=float, default=None,
@@ -55,7 +56,8 @@ def main():
     overrides = {}
     for key in ['teacher_model', 'teacher_checkpoint', 'num_classes',
                 'dataset', 'data_root', 'batch_size', 'epochs', 'lr',
-                'device', 'energy_threshold', 'rank_selection_method',
+                'device', 'energy_threshold', 'fixed_rank_ratio',
+                'rank_selection_method',
                 'seed', 'alpha', 'gamma', 'beta', 'lambda_orth']:
         val = getattr(args, key, None)
         if val is not None:

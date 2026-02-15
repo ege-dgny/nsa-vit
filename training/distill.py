@@ -46,9 +46,11 @@ def get_data_loaders(config: dict) -> tuple:
             transforms.Resize(image_size),
             transforms.RandomCrop(image_size, padding=4),
             transforms.RandomHorizontalFlip(),
+            transforms.RandAugment(num_ops=2, magnitude=9),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406],
                                  [0.229, 0.224, 0.225]),
+            transforms.RandomErasing(p=0.25),
         ])
         val_transform = transforms.Compose([
             transforms.Resize(image_size),

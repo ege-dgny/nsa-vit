@@ -40,10 +40,16 @@ def attention_map_loss(student_attn_maps: list, teacher_attn_maps: list,
         if l % every_n != 0:
             continue
         if metric == "kl":
-            # Each row of A is a probability distribution; KL(A_T || A_S)
-            p = a_t.detach()
-            log_q = F.log_softmax(a_s, dim=-1)
-            loss = loss + F.kl_div(log_q, p, reduction="batchmean")
+            # Each row of A is already a probability distribution (post-softmax).
+            # Compute per-row KL(p || q) = sum_j p_j * (log p_j - log q_j)
+            # then average over all rows (B, H, N).
+            # NOTE: F.kl_div with batchmean sums over H*N*N and divides only
+            # by B, producing values ~1000x too large for 4D attention tensors.
+            p = a_t.detach().clamp(min=1e-8)
+            log_p = torch.log(p)
+            log_q = torch.log(a_s.clamp(min=1e-8))
+            kl_per_row = (p * (log_p - log_q)).sum(dim=-1)  # (B, H, N)
+            loss = loss + kl_per_row.mean()
         else:
             loss = loss + ((a_t.detach() - a_s) ** 2).mean()
         count += 1

@@ -41,10 +41,12 @@ def get_data_loaders(image_size: int, batch_size: int,
         transforms.Resize(image_size),
         transforms.RandomCrop(image_size, padding=4),
         transforms.RandomHorizontalFlip(),
+        transforms.RandAugment(num_ops=2, magnitude=9),
         transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225]),
+        transforms.RandomErasing(p=0.25),
     ])
     val_transform = transforms.Compose([
         transforms.Resize(image_size),
@@ -131,7 +133,7 @@ def train_teacher(model_name: str = 'vit_small_patch16_224',
             images, labels = images.to(device), labels.to(device)
 
             logits = model(images)
-            loss = F.cross_entropy(logits, labels)
+            loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
 
             optimizer.zero_grad()
             loss.backward()
@@ -178,7 +180,7 @@ def main():
         description='Fine-tune ViT teacher on CIFAR-100')
     parser.add_argument('--model', type=str, default='vit_small_patch16_224')
     parser.add_argument('--num_classes', type=int, default=100)
-    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.05)

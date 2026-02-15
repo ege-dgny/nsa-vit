@@ -3,7 +3,7 @@
 
 # Model
 teacher_model: "vit_small_patch16_224"
-teacher_checkpoint: null  # path to fine-tuned teacher; null = use timm pretrained
+teacher_checkpoint: null  # IMPORTANT: fine-tune first with `python -m nsa_vit.train_teacher --epochs 30`
 image_size: 224
 patch_size: 16
 num_classes: 100  # CIFAR-100
@@ -18,14 +18,14 @@ compress_head: false            # keep classifier head full-rank
 trainable_pos_embed: true       # fine-tune positional embeddings
 
 # Loss weights
-alpha: 0.1            # null-space loss weight
-gamma: 0.05           # attention-map distillation weight
-eta: 0.05             # value-output matching weight (L_val)
-beta: 0.1             # output KD weight
-lambda_orth: 0.1      # orthonormality regularizer weight
-mu: 0.1               # global CLS matching weight (L_global)
+alpha: 0.5            # null-space loss weight (core contribution)
+gamma: 0.1            # attention-map distillation weight
+eta: 0.1              # value-output matching weight (L_val)
+beta: 1.0             # output KD weight (strong signal with proper teacher)
+lambda_orth: 0.01     # orthonormality regularizer weight
+mu: 0.01              # global CLS matching weight (L_global)
 kd_temperature: 4.0
-kd_metric: "wasserstein"  # "kl" or "wasserstein"
+kd_metric: "kl"          # "kl" or "wasserstein" — KL is standard and proven
 attn_loss_metric: "kl"   # "kl" (math-aligned) or "mse"
 
 # Training
@@ -37,11 +37,16 @@ lr: 1.34e-4
 weight_decay: 0.05
 optimizer: "adamw"
 scheduler: "cosine"
-warmup_epochs: 5
+warmup_epochs: 3
 gradient_clip: 1.0
 num_workers: 4
 seed: 42
 device: "auto"  # "auto", "cuda", "mps", or "cpu"
+
+# Data augmentation
+mixup_alpha: 0.8        # Mixup alpha (0 to disable)
+cutmix_alpha: 1.0       # CutMix alpha (0 to disable)
+label_smoothing: 0.1    # Label smoothing factor
 
 # Memory optimization
 attn_loss_every_n: 3  # compute attention distillation every N blocks

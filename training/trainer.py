@@ -3,7 +3,7 @@ NSA-ViT training loop with all loss components.
 
 Handles teacher forward (frozen, with hooks), student forward,
 loss computation (CE + NSA + attention + value-output + KD + orthonormality + global CLS),
-and optimization with gradient clipping.
+and optimization with gradient clipping. Supports Mixup/CutMix augmentation.
 """
 
 import logging
@@ -44,17 +44,41 @@ class NSAViTTrainer:
         self.device = device
 
         # Loss weights
-        self.alpha = config.get('alpha', 0.1)
-        self.gamma = config.get('gamma', 0.05)
-        self.eta = config.get('eta', 0.05)
-        self.beta = config.get('beta', 0.1)
-        self.lambda_orth = config.get('lambda_orth', 0.1)
-        self.mu = config.get('mu', 0.1)
+        self.alpha = config.get('alpha', 0.5)
+        self.gamma = config.get('gamma', 0.1)
+        self.eta = config.get('eta', 0.1)
+        self.beta = config.get('beta', 1.0)
+        self.lambda_orth = config.get('lambda_orth', 0.01)
+        self.mu = config.get('mu', 0.01)
         self.kd_temperature = config.get('kd_temperature', 4.0)
-        self.kd_metric = config.get('kd_metric', 'wasserstein')
+        self.kd_metric = config.get('kd_metric', 'kl')
         self.attn_loss_every_n = config.get('attn_loss_every_n', 3)
         self.attn_loss_metric = config.get('attn_loss_metric', 'kl')
         self.gradient_clip = config.get('gradient_clip', 1.0)
+        self.label_smoothing = config.get('label_smoothing', 0.1)
+
+        # Mixup / CutMix
+        mixup_alpha = config.get('mixup_alpha', 0.0)
+        cutmix_alpha = config.get('cutmix_alpha', 0.0)
+        self.mixup_fn = None
+        self.soft_ce_fn = None
+        if mixup_alpha > 0 or cutmix_alpha > 0:
+            try:
+                from timm.data import Mixup
+                from timm.loss import SoftTargetCrossEntropy
+                num_classes = config.get('num_classes', 100)
+                self.mixup_fn = Mixup(
+                    mixup_alpha=mixup_alpha,
+                    cutmix_alpha=cutmix_alpha,
+                    label_smoothing=self.label_smoothing,
+                    num_classes=num_classes,
+                )
+                self.soft_ce_fn = SoftTargetCrossEntropy()
+                logger.info(f"Mixup enabled: mixup_alpha={mixup_alpha}, "
+                            f"cutmix_alpha={cutmix_alpha}")
+            except ImportError:
+                logger.warning("timm.data.Mixup not available; "
+                               "disabling Mixup/CutMix.")
 
         # Optimizer
         lr = config.get('lr', 1e-4)
@@ -63,13 +87,13 @@ class NSAViTTrainer:
             self.student.parameters(), lr=lr, weight_decay=weight_decay)
 
         # Scheduler with warmup
-        epochs = config.get('epochs', 50)
-        warmup_epochs = config.get('warmup_epochs', 5)
+        epochs = config.get('epochs', 100)
+        warmup_epochs = config.get('warmup_epochs', 3)
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             self.optimizer, T_max=epochs - warmup_epochs)
         self.warmup_epochs = warmup_epochs
         self.warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
-            self.optimizer, start_factor=0.01, total_iters=warmup_epochs)
+            self.optimizer, start_factor=0.1, total_iters=warmup_epochs)
 
         # Logging
         log_dir = config.get('log_dir', './runs')
@@ -105,14 +129,23 @@ class NSAViTTrainer:
             images = images.to(self.device)
             labels = labels.to(self.device)
 
-            # Teacher forward (frozen, with hooks)
+            # Teacher forward on clean images (frozen, with hooks)
             teacher_out = self.teacher(images)
+
+            # Apply Mixup/CutMix to images and labels for student
+            mixed_labels = None
+            if self.mixup_fn is not None:
+                images, mixed_labels = self.mixup_fn(images, labels)
 
             # Student forward (with intermediates)
             student_out = self.student(images, return_intermediates=True)
 
             # 1. Supervised CE loss
-            L_ce = F.cross_entropy(student_out['logits'], labels)
+            if mixed_labels is not None:
+                L_ce = self.soft_ce_fn(student_out['logits'], mixed_labels)
+            else:
+                L_ce = F.cross_entropy(student_out['logits'], labels,
+                                       label_smoothing=self.label_smoothing)
 
             # 2. Null-space loss (FFN junctions)
             L_null = compute_block_null_space_loss(

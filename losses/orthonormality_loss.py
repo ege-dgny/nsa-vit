@@ -21,17 +21,16 @@ def orthonormality_loss(model: nn.Module) -> Tensor:
     Returns:
         scalar loss averaged over all LowRankLinear modules
     """
-    loss = torch.tensor(0.0)
+    device = next(model.parameters()).device
+    loss = torch.tensor(0.0, device=device)
     count = 0
 
     for module in model.modules():
         if isinstance(module, LowRankLinear):
             U = module.U  # (out, r)
-            if loss.device != U.device:
-                loss = loss.to(U.device)
             UtU = U.t() @ U  # (r, r)
             I = torch.eye(U.shape[1], device=U.device)
-            loss = loss + ((UtU - I) ** 2).sum()
+            loss = loss + ((UtU - I) ** 2).mean()
             count += 1
 
     return loss / max(count, 1)

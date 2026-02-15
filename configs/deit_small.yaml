@@ -3,7 +3,7 @@
 
 # Model
 teacher_model: "deit_small_patch16_224"
-teacher_checkpoint: null  # Fine-tune first: python -m nsa_vit.train_teacher --model deit_small_patch16_224 --epochs 30 --checkpoint_dir ./checkpoints/deit_small
+teacher_checkpoint: "./checkpoints/deit_small/teacher_best.pth"
 image_size: 224
 patch_size: 16
 num_classes: 100  # CIFAR-100

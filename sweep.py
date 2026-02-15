@@ -34,12 +34,20 @@ SWEEP_CONFIG = {
     "metric": {"name": "best_val_top1", "goal": "maximize"},
     "parameters": {
         "rank_selection_method": {"values": ["energy_threshold"]},
-        "energy_threshold": {"values": [0.85, 0.88, 0.92, 0.95, 0.98]},
+        "energy_threshold": {"values": [0.3, 0.4, 0.5, 0.6, 0.7]},
         # Alternative: sweep fixed_rank_ratio instead
         # "rank_selection_method": {"values": ["fixed_ratio"]},
         # "fixed_rank_ratio": {"values": [0.15, 0.2, 0.25, 0.3]},
     },
 }
+# SWEEP_CONFIG = {
+#     "method": "grid",
+#     "metric": {"name": "best_val_top1", "goal": "maximize"},
+#     "parameters": {
+#         "rank_selection_method": {"values": ["fixed_ratio"]},
+#         "fixed_rank_ratio": {"values": [0.15, 0.20, 0.25, 0.30, 0.35]},
+#     },
+# }
 
 
 

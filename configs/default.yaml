@@ -31,9 +31,9 @@ attn_loss_metric: "kl"   # "kl" (math-aligned) or "mse"
 # Training
 dataset: "cifar100"         # "cifar100" or "imagenet"
 data_root: "./data"
-batch_size: 128
-epochs: 50
-lr: 1.0e-4
+batch_size: 96
+epochs: 30
+lr: 1.34e-4
 weight_decay: 0.05
 optimizer: "adamw"
 scheduler: "cosine"

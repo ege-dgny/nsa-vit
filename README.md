@@ -1,6 +1,6 @@
 # NSA-ViT: Null-Space Absorbing Vision Transformer Compression
 
-Compress pretrained Vision Transformers via low-rank factorization with null-space absorption loss. Extension of the NSA-Net method ([Low-Rank Compression of Neural Network Weights by Null-Space Encouragement](../Low-Rank_Compression_of_Neural_Network_Weights_by_Null-Space_Encouragement.pdf)) from CNNs to ViTs.
+Compress pretrained Vision Transformers via low-rank factorization with null-space absorption loss. Extension of the NSA-Net method ([Low-Rank Compression of Neural Network Weights by Null-Space Encouragement](https://ieeexplore.ieee.org/document/11249299)) from CNNs to ViTs.
 
 ## Method
 
